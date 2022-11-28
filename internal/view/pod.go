@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/derailed/k9s/internal/ui/dialog"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -12,7 +13,6 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/fatih/color"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -193,6 +193,27 @@ func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 		p.App().Flash().Err(fmt.Errorf("expecting a nuker for %q", p.GVR()))
 		return nil
 	}
+
+	if p.App().Config.K9s.ConfirmDelete {
+
+		title, msg := "Confirm Kill", ""
+		if len(selections) > 1 {
+			msg = fmt.Sprintf("%d marked %s", len(selections), p.GVR())
+		} else {
+			msg = fmt.Sprintf("Resource %s %s", p.GVR(), selections[0])
+		}
+
+		dialog.ShowConfirm(p.App().Styles.Dialog(), p.App().Content.Pages, title, msg, func() {
+			p.killCmdAction(evt, &nuker)
+		}, func() {})
+	} else {
+		p.killCmdAction(evt, &nuker)
+	}
+	return nil
+}
+
+func (p *Pod) killCmdAction(evt *tcell.EventKey, nuker *dao.Nuker) {
+
 	if len(selections) > 1 {
 		p.App().Flash().Infof("Delete %d marked %s", len(selections), p.GVR())
 	} else {
@@ -209,7 +230,6 @@ func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	p.Refresh()
 
-	return nil
 }
 
 func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {

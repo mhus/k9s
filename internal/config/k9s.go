@@ -5,8 +5,9 @@ import (
 )
 
 const (
-	defaultRefreshRate  = 2
-	defaultMaxConnRetry = 5
+	defaultRefreshRate   = 2
+	defaultMaxConnRetry  = 5
+	defaultConfirmDelete = true
 )
 
 // K9s tracks K9s configuration options.
@@ -33,6 +34,7 @@ type K9s struct {
 	manualReadOnly      *bool
 	manualCommand       *string
 	manualScreenDumpDir *string
+	ConfirmDelete       bool `yaml:"confirmDelete"`
 }
 
 // NewK9s create a new K9s configuration.
@@ -44,6 +46,7 @@ func NewK9s() *K9s {
 		Clusters:      make(map[string]*Cluster),
 		Thresholds:    NewThreshold(),
 		ScreenDumpDir: K9sDefaultScreenDumpDir,
+		ConfirmDelete: defaultConfirmDelete,
 	}
 }
 

@@ -18,7 +18,6 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -333,6 +332,27 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	if b.App().Config.K9s.ConfirmDelete {
+
+		title, msg := "Confirm Delete", ""
+		if len(selections) > 1 {
+			msg = fmt.Sprintf("%d marked %s?", len(selections), b.GVR())
+		} else {
+			msg := fmt.Sprintf("%s %s?", b.GVR().R(), selections[0])
+		}
+		dialog.ShowConfirm(p.App().Styles.Dialog(), p.App().Content.Pages, title, msg, func() {
+			b.deleteCmdAction(evt)
+		}, func() {})
+
+	} else {
+		b.deleteCmdAction(evt)
+	}
+
+	return nil
+}
+
+func (b *Browser) deleteCmdAction(evt *tcell.EventKey) {
+
 	b.Stop()
 	defer b.Start()
 	{
@@ -342,12 +362,11 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		}
 		if !dao.IsK8sMeta(b.meta) {
 			b.simpleDelete(selections, msg)
-			return nil
+			return
 		}
 		b.resourceDelete(selections, msg)
 	}
 
-	return nil
 }
 
 func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
